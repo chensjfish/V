@@ -7,7 +7,67 @@
       content="width=device-width, initial-scale=1.0"
     />
     <title>门店地图插件</title>
-    <script type="module" crossorigin src="/V/assets/index-Dq8mzFKg.js"></script>
+    <style>
+      #boot-debug {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        z-index: 999999;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(12, 27, 47, 0.92);
+        color: #f5f9ff;
+        font: 12px/1.5 "Segoe UI", "PingFang SC", sans-serif;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    </style>
+    <script>
+      (function () {
+        function ensurePanel() {
+          var panel = document.getElementById("boot-debug");
+          if (!panel) {
+            panel = document.createElement("div");
+            panel.id = "boot-debug";
+            panel.textContent = "boot: html loaded";
+            document.addEventListener("DOMContentLoaded", function () {
+              if (!document.getElementById("boot-debug")) {
+                document.body.appendChild(panel);
+              }
+            });
+          }
+          return panel;
+        }
+
+        window.__BOOT_DEBUG__ = {
+          log: function (message) {
+            var panel = ensurePanel();
+            panel.textContent += "\n" + message;
+          },
+          replace: function (message) {
+            var panel = ensurePanel();
+            panel.textContent = message;
+          },
+          hide: function () {
+            var panel = document.getElementById("boot-debug");
+            if (panel) {
+              panel.style.display = "none";
+            }
+          }
+        };
+
+        window.addEventListener("error", function (event) {
+          window.__BOOT_DEBUG__.log("window.error: " + (event.message || "unknown"));
+        });
+
+        window.addEventListener("unhandledrejection", function (event) {
+          var reason = event.reason && event.reason.message ? event.reason.message : String(event.reason);
+          window.__BOOT_DEBUG__.log("unhandledrejection: " + reason);
+        });
+      })();
+    </script>
+    <script type="module" crossorigin src="/V/assets/index-D8jdf5vj.js"></script>
     <link rel="stylesheet" crossorigin href="/V/assets/index-DILvPFef.css">
   </head>
   <body>
