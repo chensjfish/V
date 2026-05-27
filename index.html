@@ -59,15 +59,25 @@
 
         window.addEventListener("error", function (event) {
           window.__BOOT_DEBUG__.log("window.error: " + (event.message || "unknown"));
+          if (event.error && event.error.stack) {
+            window.__BOOT_DEBUG__.log("stack: " + event.error.stack);
+          } else if (event.filename) {
+            window.__BOOT_DEBUG__.log(
+              "source: " + event.filename + ":" + event.lineno + ":" + event.colno
+            );
+          }
         });
 
         window.addEventListener("unhandledrejection", function (event) {
           var reason = event.reason && event.reason.message ? event.reason.message : String(event.reason);
           window.__BOOT_DEBUG__.log("unhandledrejection: " + reason);
+          if (event.reason && event.reason.stack) {
+            window.__BOOT_DEBUG__.log("stack: " + event.reason.stack);
+          }
         });
       })();
     </script>
-    <script type="module" crossorigin src="/V/assets/index-ofEyC_HB.js"></script>
+    <script type="module" crossorigin src="/V/assets/index-YBNApYNg.js"></script>
     <link rel="stylesheet" crossorigin href="/V/assets/index-DILvPFef.css">
   </head>
   <body>
