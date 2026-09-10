@@ -9,6 +9,17 @@ export function isMock(): boolean {
   }
 }
 
+/** 加 ?debug=1 显示诊断面板（环境 / 配置 / 取数 / 错误），飞书里排查白屏用 */
+export function isDebug(): boolean {
+  try {
+    const s = new URLSearchParams(window.location.search);
+    if (s.get('debug') === '0') return false;
+    return s.get('debug') === '1' || s.get('mock') === '1';
+  } catch {
+    return false;
+  }
+}
+
 /** 输入框占位提示：留空则用内置默认 key */
 export const KEY_PLACEHOLDER = '留空则使用内置默认 key';
 

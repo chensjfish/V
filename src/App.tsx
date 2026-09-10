@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { DashboardState, dashboard } from '@lark-base-open/js-sdk';
 import ConfigPanel from './components/ConfigPanel';
 import MapView from './components/MapView';
+import Diagnose from './components/Diagnose';
+import { isDebug } from './mock';
 import type { PluginConfig } from './types';
 import { MOCK_CONFIG, isMock } from './mock';
 
@@ -42,15 +44,20 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [mock]);
 
+  // 保持引用稳定，避免每次渲染都触发子组件重新取数
+  // 注意：必须在任何 return 之前调用，否则 Hook 数量变化会导致飞书里白屏
+  const cfg = useMemo(() => config ?? {}, [config]);
+
   if (!loaded && !mock) return <div className="map-mask">加载中…</div>;
 
   const isConfig = state === DashboardState.Create || state === DashboardState.Config;
-  // 保持引用稳定，避免每次渲染都触发子组件重新取数
-  const cfg = useMemo(() => config ?? {}, [config]);
 
   return (
     <div className="app">
       {isConfig ? <ConfigPanel config={cfg} /> : <MapView config={cfg} />}
+      {/* 真实模式（飞书内）默认常驻诊断浮窗，便于排查白屏；mock 模式按 ?debug=1 控制。
+          排查完成后可改回 isDebug() 关闭 */}
+      {(isDebug() || !mock) && <Diagnose config={cfg} state={state} />}
     </div>
   );
 }
