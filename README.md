@@ -28,13 +28,14 @@ npm run dev        # 默认 http://localhost:5173
 
 `src/mapKey.ts` 里已内置一个默认 key，配置面板留空即可直接使用，不用每个组件重复粘贴。
 
-**但务必做这一步安全配置**——前端 key 一定会暴露在 JS 产物里，混淆没有意义，唯一的防线是白名单：
+**关于 key 的安全（重要）**：前端 key 一定会暴露在 JS 产物里，混淆没有意义。
+
+- **飞书仪表盘插件场景**：不要依赖 Referer 白名单。飞书把插件嵌在 iframe 中，发往地图的请求 Referer 要么为空、要么是飞书域名，**不在白名单内会被直接拒绝，导致地图白屏**。因此飞书场景应保持白名单**关闭**，仅靠下面的「每日调用量上限」兜底即可。
+- 其他场景（自己网页嵌入）可用 Referer 白名单：只填 `https://chensjfish.github.io`，本地调试可临时加 `http://localhost:5173`。
 
 1. 打开[腾讯位置服务控制台](https://lbs.qq.com/dev/console/application/mine) → 找到该 key → 编辑
-2. 启用 **Referer 白名单**，只填你实际使用的来源：
-   - `https://chensjfish.github.io`
-   - `http://localhost:5173`（本地调试用，调完可删）
-3. 建议同时配置「配额/调用量限制」，避免被他人盗用后产生账单
+2. 确认已启用 **JavaScript API GL** 产品（不是 WebServiceAPI / 小程序）
+3. 配置**每日调用量上限**，避免 key 暴露后被他人盗刷产生账单
 
 要换 key 时改 `src/mapKey.ts` 的 `DEFAULT_MAP_KEY` 即可；配置面板里单独填的 key 优先级更高。
 
