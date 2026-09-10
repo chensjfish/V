@@ -1,0 +1,157 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 13px;
+  color: #1f2329;
+  background: transparent;
+}
+
+.app {
+  height: 100%;
+  width: 100%;
+}
+
+/* 地图视图 */
+.map-wrap {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.map-canvas {
+  height: 100%;
+  width: 100%;
+}
+
+.map-stat {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f2329;
+  font-size: 12px;
+  line-height: 1.6;
+  pointer-events: none;
+}
+
+.map-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
+  color: #646a73;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.map-mask-error {
+  color: #d83931;
+}
+
+.map-info {
+  min-width: 120px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.map-info-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2329;
+}
+
+.map-info-coord {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #8f959e;
+}
+
+/* 配置面板 */
+.config {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.config-row label {
+  width: 110px;
+  flex-shrink: 0;
+  color: #646a73;
+}
+
+.config-row select,
+.config-row input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #dee0e3;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #ffffff;
+  color: #1f2329;
+}
+
+.config-check {
+  align-items: flex-start;
+}
+
+.config-check label {
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #1f2329;
+}
+
+.config-hint {
+  margin: 0 0 12px;
+  padding-left: 118px;
+  font-size: 12px;
+  color: #8f959e;
+  line-height: 1.6;
+}
+
+.config-save {
+  height: 32px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 4px;
+  background: #3370ff;
+  color: #ffffff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.config-save:disabled {
+  background: #bbd0ff;
+  cursor: not-allowed;
+}
+
+.config-tip {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #646a73;
+}
