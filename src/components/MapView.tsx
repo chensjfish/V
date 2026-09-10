@@ -22,6 +22,13 @@ export default function MapView({ config }: Props) {
   // 1. 取数
   useEffect(() => {
     let alive = true;
+    if (!config.tableId) {
+      setPoints([]);
+      setStat({ total: 0, skipped: 0 });
+      setMessage('尚未配置数据表，请点击组件右上角 ⋮ → 配置，选择数据表与经纬度字段');
+      dashboard.setRendered().catch(() => {});
+      return;
+    }
     loadPoints(config)
       .then((res) => {
         if (!alive) return;
@@ -43,6 +50,8 @@ export default function MapView({ config }: Props) {
 
   // 2. 初始化地图
   useEffect(() => {
+    // 未配置数据表时优先显示配置引导，不覆盖为 key 的报错
+    if (!config.tableId) return;
     if (!config.mapKey) {
       setStatus('error');
       setMessage('未配置腾讯地图 key，请在插件配置中填写');
@@ -67,7 +76,7 @@ export default function MapView({ config }: Props) {
     return () => {
       alive = false;
     };
-  }, [config.mapKey]);
+  }, [config.mapKey, config.tableId]);
 
   // 3. 打点 + 自适应视野
   useEffect(() => {

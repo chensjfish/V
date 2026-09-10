@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DashboardState, dashboard } from '@lark-base-open/js-sdk';
 import ConfigPanel from './components/ConfigPanel';
 import MapView from './components/MapView';
@@ -45,7 +45,8 @@ export default function App() {
   if (!loaded && !mock) return <div className="map-mask">加载中…</div>;
 
   const isConfig = state === DashboardState.Create || state === DashboardState.Config;
-  const cfg = config ?? {};
+  // 保持引用稳定，避免每次渲染都触发子组件重新取数
+  const cfg = useMemo(() => config ?? {}, [config]);
 
   return (
     <div className="app">

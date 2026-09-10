@@ -84,7 +84,7 @@ export default function ConfigPanel({ config }: Props) {
       const current = await dashboard.getConfig().catch(() => null);
       await dashboard.saveConfig({
         dataConditions: current?.dataConditions ?? [],
-        customConfig: form,
+        customConfig: { ...form },
       });
       setTip('配置已保存');
     } catch (e: any) {

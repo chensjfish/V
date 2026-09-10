@@ -47,6 +47,9 @@ function isValid(lng: number, lat: number): boolean {
   return lng >= 70 && lng <= 140 && lat >= 0 && lat <= 60;
 }
 
+/** 官方推荐的分页接口单页上限为 200，超过会被截断 */
+const PAGE_SIZE = 200;
+
 /** 从多维表读取门店点位，自动分页 */
 export async function loadPoints(cfg: PluginConfig): Promise<LoadResult> {
   if (isMock()) {
@@ -58,12 +61,12 @@ export async function loadPoints(cfg: PluginConfig): Promise<LoadResult> {
   const points: StorePoint[] = [];
   let total = 0;
   let skipped = 0;
-  let pageToken: string | undefined;
+  let pageToken: number | undefined;
   let guard = 0;
 
   do {
-    const res = await table.getRecords({ pageSize: 500, pageToken });
-    total += res.records.length;
+    const res = await table.getRecordsByPage({ pageSize: PAGE_SIZE, pageToken });
+    total = res.total ?? total;
 
     for (const record of res.records) {
       const fields = record.fields as Record<string, unknown>;
@@ -95,9 +98,10 @@ export async function loadPoints(cfg: PluginConfig): Promise<LoadResult> {
       });
     }
 
-    pageToken = res.hasMore ? res.pageToken : undefined;
+    // hasMore 为 true 但没有返回新 pageToken 时主动退出，避免死循环
+    pageToken = res.hasMore && typeof res.pageToken === 'number' ? res.pageToken : undefined;
     guard += 1;
-  } while (pageToken && guard < 50);
+  } while (pageToken != null && guard < 50);
 
   return { points, total, skipped };
 }
