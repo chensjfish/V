@@ -55,9 +55,8 @@ export default function App() {
   return (
     <div className="app">
       {isConfig ? <ConfigPanel config={cfg} /> : <MapView config={cfg} />}
-      {/* 真实模式（飞书内）默认常驻诊断浮窗，便于排查白屏；mock 模式按 ?debug=1 控制。
-          排查完成后可改回 isDebug() 关闭 */}
-      {(isDebug() || !mock) && <Diagnose config={cfg} state={state} />}
+      {/* 仅在 ?debug=1 时显示诊断浮窗（用于排查白屏） */}
+      {isDebug() && <Diagnose config={cfg} state={state} />}
     </div>
   );
 }
