@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { bitable, dashboard } from '@lark-base-open/js-sdk';
 import type { CoordSource, PluginConfig } from '../types';
 import { KEY_PLACEHOLDER, isMock, MOCK_CONFIG } from '../mock';
+import { DEFAULT_MAP_KEY } from '../mapKey';
 
 interface Props {
   config: PluginConfig;
@@ -20,7 +21,12 @@ interface FieldOption {
 export default function ConfigPanel({ config }: Props) {
   const [tables, setTables] = useState<TableOption[]>([]);
   const [fields, setFields] = useState<FieldOption[]>([]);
-  const [form, setForm] = useState<PluginConfig>(config ?? {});
+  // 没填过 key 时预填内置默认值，省去每个组件重复粘贴
+  const [form, setForm] = useState<PluginConfig>({
+    mapKey: DEFAULT_MAP_KEY,
+    ...(config ?? {}),
+    ...(config?.mapKey ? {} : { mapKey: DEFAULT_MAP_KEY }),
+  });
   const [saving, setSaving] = useState(false);
   const [tip, setTip] = useState('');
 
@@ -65,10 +71,6 @@ export default function ConfigPanel({ config }: Props) {
     setSaving(true);
     setTip('');
     try {
-      if (!form.mapKey) {
-        setTip('请先填写腾讯地图 key');
-        return;
-      }
       if (form.coordSource === 'location' && !form.locationFieldId) {
         setTip('请选择地理位置字段');
         return;
@@ -209,7 +211,8 @@ export default function ConfigPanel({ config }: Props) {
         />
       </div>
       <p className="config-hint">
-        key 在前端明文可见，请到腾讯位置服务控制台配置 Referer 白名单，只允许你的 Pages 域名使用。
+        已内置默认 key，留空即可直接使用。key 在前端明文可见，请到腾讯位置服务控制台配置 Referer
+        白名单，只允许你的 Pages 域名使用。
       </p>
 
       <button className="config-save" disabled={saving} onClick={handleSave}>

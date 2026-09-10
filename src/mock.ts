@@ -9,14 +9,15 @@ export function isMock(): boolean {
   }
 }
 
-/** 本地调试用的 key 占位提示，真实 key 请在配置面板里填 */
-export const KEY_PLACEHOLDER = '请在腾讯位置服务开放平台自行申请 key 并替换此占位符';
+/** 输入框占位提示：留空则用内置默认 key */
+export const KEY_PLACEHOLDER = '留空则使用内置默认 key';
 
 export const MOCK_CONFIG: PluginConfig = {
   tableId: 'mock',
   tableName: '门店经纬度（本地示例数据）',
   coordSource: 'lnglat',
   swapLngLat: false,
+  mapKey: '',
 };
 
 /** 从多维表「门店经纬度」导出的真实点位，仅用于本地 mock 调试 */

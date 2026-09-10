@@ -17,20 +17,26 @@ npm run dev        # 默认 http://localhost:5173
 
 ### 脱离飞书调试 UI（可选）
 
-本地浏览器打开 `http://localhost:5173/?mock=1` 会走 mock 数据，不会调用飞书 SDK。
-需要看真实地图时，追加 key 参数：`http://localhost:5173/?mock=1&key=你的腾讯地图key`
+本地浏览器打开 `http://localhost:5173/?mock=1` 会走 mock 数据（真实 52 条门店），不会调用飞书 SDK，
+但**会真实加载腾讯地图**——所以本地要能出图，key 的白名单里得加上 `http://localhost:5173`。
 
 > `src/mock.ts` 里的 mock 点位是从「门店经纬度」导出的**真实 52 条门店数据**（便于本地核对坐标是否落在正确位置）。门店位置属公开信息，但如果不希望它进入公开仓库，把 `MOCK_POINTS` 换回示例坐标即可。
 
 > 注意：服务地址只能填 `localhost`，不能填局域网 IP。https 页面嵌入 http iframe 仅对 localhost 豁免。
 
-## 二、腾讯地图 key（必须自备）
+## 二、腾讯地图 key
 
-代码里不含任何可用 key，需要你自己申请：
+`src/mapKey.ts` 里已内置一个默认 key，配置面板留空即可直接使用，不用每个组件重复粘贴。
 
-1. 打开腾讯位置服务控制台 → 创建应用 → 添加 key，类型选 **WebServiceAPI / JavaScript GL**
-2. 在 key 的额度与配额设置里配置 **Referer 白名单**，只允许 `https://chensjfish.github.io` 使用（前端 key 必然可被查看到，白名单是唯一防线）
-3. 把 key 填到插件配置面板的「腾讯地图 key」里，配置存在仪表盘的 `customConfig` 中
+**但务必做这一步安全配置**——前端 key 一定会暴露在 JS 产物里，混淆没有意义，唯一的防线是白名单：
+
+1. 打开[腾讯位置服务控制台](https://lbs.qq.com/dev/console/application/mine) → 找到该 key → 编辑
+2. 启用 **Referer 白名单**，只填你实际使用的来源：
+   - `https://chensjfish.github.io`
+   - `http://localhost:5173`（本地调试用，调完可删）
+3. 建议同时配置「配额/调用量限制」，避免被他人盗用后产生账单
+
+要换 key 时改 `src/mapKey.ts` 的 `DEFAULT_MAP_KEY` 即可；配置面板里单独填的 key 优先级更高。
 
 ## 三、插件配置
 
@@ -40,7 +46,7 @@ npm run dev        # 默认 http://localhost:5173
 | 门店名称字段 | 点击点位时气泡显示的标题，可选 |
 | 坐标来源 | `经度字段 + 纬度字段`（文本/数字均可）或 `单个地理位置字段` |
 | 经纬度顺序颠倒 | 点位整体偏移、或跑到海外时勾选，交换经纬度 |
-| 腾讯地图 key | 见上一节 |
+| 腾讯地图 key | 留空即用内置默认 key，见上一节 |
 
 配置保存在仪表盘的 `customConfig`，每张仪表盘组件独立保存。
 
