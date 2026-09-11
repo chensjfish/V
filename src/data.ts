@@ -95,6 +95,12 @@ export async function loadPoints(cfg: PluginConfig): Promise<LoadResult> {
         name: cfg.nameFieldId ? toText(fields[cfg.nameFieldId]) : '',
         lng,
         lat,
+        province: cfg.provinceFieldId ? toText(fields[cfg.provinceFieldId]) || undefined : undefined,
+        city: cfg.cityFieldId ? toText(fields[cfg.cityFieldId]) || undefined : undefined,
+        brand: cfg.brandFieldId ? toText(fields[cfg.brandFieldId]) || undefined : undefined,
+        storeFunction: cfg.funcFieldId ? toText(fields[cfg.funcFieldId]) || undefined : undefined,
+        storeType: cfg.typeFieldId ? toText(fields[cfg.typeFieldId]) || undefined : undefined,
+        businessModel: cfg.modelFieldId ? toText(fields[cfg.modelFieldId]) || undefined : undefined,
       });
     }
 

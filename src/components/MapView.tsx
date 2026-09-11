@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { dashboard } from '@lark-base-open/js-sdk';
 import { loadPoints } from '../data';
 import { DEFAULT_MAP_KEY } from '../mapKey';
-import { MARKER_ICON, loadTMap } from '../tmap';
+import { makeMarkerIcon, loadTMap } from '../tmap';
+import { getBrandColor, styleIdForBrand } from '../brandColors';
 import type { PluginConfig, StorePoint } from '../types';
+import FilterSelect from './FilterSelect';
 
 interface Props {
   config: PluginConfig;
@@ -19,6 +21,73 @@ export default function MapView({ config }: Props) {
   const [message, setMessage] = useState('');
   const [points, setPoints] = useState<StorePoint[]>([]);
   const [stat, setStat] = useState({ total: 0, skipped: 0 });
+
+  // 省份 / 城市 / 品牌 / 门店功能 / 门店类型 / 经营模式 筛选（品牌及后三个为多选）
+  const [province, setProvince] = useState('');
+  const [city, setCity] = useState('');
+  const [brandsSelected, setBrandsSelected] = useState<string[]>([]);
+  const [funcSelected, setFuncSelected] = useState<string[]>([]);
+  const [typeSelected, setTypeSelected] = useState<string[]>([]);
+  const [modelSelected, setModelSelected] = useState<string[]>([]);
+
+  const hasProvince = points.some((p) => p.province);
+  const hasCity = points.some((p) => p.city);
+  const hasBrand = points.some((p) => p.brand);
+  const hasFunc = points.some((p) => p.storeFunction);
+  const hasType = points.some((p) => p.storeType);
+  const hasModel = points.some((p) => p.businessModel);
+
+  const provinces = useMemo(() => {
+    const set = new Set<string>();
+    points.forEach((p) => p.province && set.add(p.province));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
+  }, [points]);
+
+  const cities = useMemo(() => {
+    const set = new Set<string>();
+    points.forEach((p) => {
+      if (p.city && (!province || p.province === province)) set.add(p.city);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
+  }, [points, province]);
+
+  const brands = useMemo(() => {
+    const set = new Set<string>();
+    points.forEach((p) => p.brand && set.add(p.brand));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
+  }, [points]);
+
+  const funcs = useMemo(() => {
+    const set = new Set<string>();
+    points.forEach((p) => p.storeFunction && set.add(p.storeFunction));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
+  }, [points]);
+
+  const types = useMemo(() => {
+    const set = new Set<string>();
+    points.forEach((p) => p.storeType && set.add(p.storeType));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
+  }, [points]);
+
+  const models = useMemo(() => {
+    const set = new Set<string>();
+    points.forEach((p) => p.businessModel && set.add(p.businessModel));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
+  }, [points]);
+
+  const filtered = useMemo(
+    () =>
+      points.filter(
+        (p) =>
+          (!province || p.province === province) &&
+          (!city || p.city === city) &&
+          (brandsSelected.length === 0 || brandsSelected.includes(p.brand ?? '')) &&
+          (funcSelected.length === 0 || funcSelected.includes(p.storeFunction ?? '')) &&
+          (typeSelected.length === 0 || typeSelected.includes(p.storeType ?? '')) &&
+          (modelSelected.length === 0 || modelSelected.includes(p.businessModel ?? '')),
+      ),
+    [points, province, city, brandsSelected, funcSelected, typeSelected, modelSelected],
+  );
 
   // 1. 取数
   useEffect(() => {
@@ -86,38 +155,52 @@ export default function MapView({ config }: Props) {
       markerRef.current.setMap(null);
       markerRef.current = null;
     }
-    if (points.length === 0) {
+    if (filtered.length === 0) {
       dashboard.setRendered().catch(() => {});
       return;
     }
 
-    const geometries = points.map((p, i) => ({
+    const geometries = filtered.map((p, i) => ({
       id: String(i),
-      styleId: 'store',
+      styleId: styleIdForBrand(p.brand),
       position: new TMap.LatLng(p.lat, p.lng),
     }));
 
-    markerRef.current = new TMap.MultiMarker({
-      map,
-      styles: {
-        store: new TMap.MarkerStyle({
+    const styles: Record<string, any> = {};
+    filtered.forEach((p) => {
+      const sid = styleIdForBrand(p.brand);
+      if (!styles[sid]) {
+        styles[sid] = new TMap.MarkerStyle({
           width: 24,
           height: 32,
           anchor: { x: 12, y: 32 },
-          src: MARKER_ICON,
-        }),
-      },
+          src: makeMarkerIcon(getBrandColor(p.brand)),
+        });
+      }
+    });
+
+    markerRef.current = new TMap.MultiMarker({
+      map,
+      styles,
       geometries,
     });
 
     markerRef.current.on('click', (evt: any) => {
       const index = Number(evt?.geometry?.id);
-      const point = points[index];
+      const point = filtered[index];
       if (!point) return;
       const position = new TMap.LatLng(point.lat, point.lng);
+      const addr = [point.province, point.city].filter(Boolean).join(' · ');
+      const brandLine = point.brand
+        ? `<div class="map-info-brand" style="color:${getBrandColor(point.brand)}">${escapeHtml(
+            point.brand,
+          )}</div>`
+        : '';
       const content = `<div class="map-info"><div class="map-info-title">${escapeHtml(
         point.name || '未命名门店',
-      )}</div><div class="map-info-coord">${point.lng.toFixed(6)}, ${point.lat.toFixed(6)}</div></div>`;
+      )}</div>${brandLine}${
+        addr ? `<div class="map-info-addr">${escapeHtml(addr)}</div>` : ''
+      }<div class="map-info-coord">${point.lng.toFixed(6)}, ${point.lat.toFixed(6)}</div></div>`;
       if (!infoRef.current) {
         infoRef.current = new TMap.InfoWindow({
           map,
@@ -134,14 +217,74 @@ export default function MapView({ config }: Props) {
     });
 
     const bounds = new TMap.LatLngBounds();
-    points.forEach((p) => bounds.extend(new TMap.LatLng(p.lat, p.lng)));
+    filtered.forEach((p) => bounds.extend(new TMap.LatLng(p.lat, p.lng)));
     map.fitBounds(bounds, { padding: 60 });
 
     dashboard.setRendered().catch(() => {});
-  }, [status, points]);
+  }, [status, filtered]);
 
   return (
     <div className="map-wrap">
+      {(hasProvince || hasCity || hasBrand || hasFunc || hasType || hasModel) && (
+        <div className="map-filters">
+          {hasProvince && (
+            <FilterSelect
+              placeholder="全部省份"
+              options={provinces}
+              value={province}
+              onChange={(v) => {
+                setProvince(v as string);
+                setCity('');
+              }}
+            />
+          )}
+          {hasCity && (
+            <FilterSelect
+              placeholder="全部城市"
+              options={cities}
+              value={city}
+              onChange={(v) => setCity(v as string)}
+            />
+          )}
+          {hasBrand && (
+            <FilterSelect
+              placeholder="全部品牌"
+              multiple
+              options={brands}
+              value={brandsSelected}
+              onChange={(v) => setBrandsSelected(v as string[])}
+            />
+          )}
+          {hasFunc && (
+            <FilterSelect
+              placeholder="全部功能"
+              multiple
+              options={funcs}
+              value={funcSelected}
+              onChange={(v) => setFuncSelected(v as string[])}
+            />
+          )}
+          {hasType && (
+            <FilterSelect
+              placeholder="全部类型"
+              multiple
+              options={types}
+              value={typeSelected}
+              onChange={(v) => setTypeSelected(v as string[])}
+            />
+          )}
+          {hasModel && (
+            <FilterSelect
+              placeholder="全部模式"
+              multiple
+              options={models}
+              value={modelSelected}
+              onChange={(v) => setModelSelected(v as string[])}
+            />
+          )}
+          <span className="map-filter-count">显示 {filtered.length} 个</span>
+        </div>
+      )}
       <div ref={containerRef} className="map-canvas" />
       <div className="map-stat">
         共 {stat.total} 条记录，成功打点 {points.length} 个
@@ -150,6 +293,9 @@ export default function MapView({ config }: Props) {
       {status === 'loading' && <div className="map-mask">地图加载中…</div>}
       {status === 'error' && <div className="map-mask map-mask-error">{message}</div>}
       {status === 'ready' && points.length === 0 && message && <div className="map-mask">{message}</div>}
+      {status === 'ready' && points.length > 0 && filtered.length === 0 && (
+        <div className="map-mask">当前筛选条件下没有门店</div>
+      )}
     </div>
   );
 }

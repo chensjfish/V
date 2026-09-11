@@ -39,3 +39,12 @@ export const MARKER_ICON =
       <circle cx="12" cy="12" r="5" fill="#ffffff"/>
     </svg>`,
   );
+
+/** 按指定颜色生成水滴标记图标（data URL），用于按品牌着色 */
+export function makeMarkerIcon(color: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32">
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 8.4 12 20 12 20s12-11.6 12-20C24 5.373 18.627 0 12 0z" fill="${color}"/>
+    <circle cx="12" cy="12" r="5" fill="#ffffff"/>
+  </svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}

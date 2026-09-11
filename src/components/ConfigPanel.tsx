@@ -201,6 +201,98 @@ export default function ConfigPanel({ config }: Props) {
         </label>
       </div>
 
+      <div className="config-subtitle">地图筛选（可选）</div>
+
+      <div className="config-row">
+        <label>省份字段</label>
+        <select
+          value={form.provinceFieldId ?? ''}
+          onChange={(e) => update({ provinceFieldId: e.target.value || undefined })}
+        >
+          <option value="">（可选）不启用省份筛选</option>
+          {fields.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="config-row">
+        <label>城市字段</label>
+        <select
+          value={form.cityFieldId ?? ''}
+          onChange={(e) => update({ cityFieldId: e.target.value || undefined })}
+        >
+          <option value="">（可选）不启用城市筛选</option>
+          {fields.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="config-row">
+        <label>品牌字段</label>
+        <select
+          value={form.brandFieldId ?? ''}
+          onChange={(e) => update({ brandFieldId: e.target.value || undefined })}
+        >
+          <option value="">（可选）不启用品牌着色/筛选</option>
+          {fields.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="config-row">
+        <label>门店功能字段</label>
+        <select
+          value={form.funcFieldId ?? ''}
+          onChange={(e) => update({ funcFieldId: e.target.value || undefined })}
+        >
+          <option value="">（可选）不启用门店功能筛选</option>
+          {fields.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="config-row">
+        <label>门店类型字段</label>
+        <select
+          value={form.typeFieldId ?? ''}
+          onChange={(e) => update({ typeFieldId: e.target.value || undefined })}
+        >
+          <option value="">（可选）不启用门店类型筛选</option>
+          {fields.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="config-row">
+        <label>经营模式字段</label>
+        <select
+          value={form.modelFieldId ?? ''}
+          onChange={(e) => update({ modelFieldId: e.target.value || undefined })}
+        >
+          <option value="">（可选）不启用经营模式筛选</option>
+          {fields.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="config-row">
         <label>腾讯地图 key</label>
         <input

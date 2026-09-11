@@ -16,6 +16,18 @@ export interface PluginConfig {
   swapLngLat?: boolean;
   /** 腾讯地图 key（前端明文，务必配置 Referer 白名单） */
   mapKey?: string;
+  /** 省份字段（可选，用于地图按省/市筛选） */
+  provinceFieldId?: string;
+  /** 城市字段（可选，用于地图按省/市筛选） */
+  cityFieldId?: string;
+  /** 品牌字段（可选，用于按品牌着色与筛选） */
+  brandFieldId?: string;
+  /** 门店功能字段（可选，多选筛选） */
+  funcFieldId?: string;
+  /** 门店类型字段（可选，多选筛选） */
+  typeFieldId?: string;
+  /** 经营模式字段（可选，多选筛选） */
+  modelFieldId?: string;
 }
 
 export interface StorePoint {
@@ -23,6 +35,18 @@ export interface StorePoint {
   name: string;
   lng: number;
   lat: number;
+  /** 省份（命名筛选用，可选） */
+  province?: string;
+  /** 城市（命名筛选用，可选） */
+  city?: string;
+  /** 品牌（着色与筛选用，可选） */
+  brand?: string;
+  /** 门店功能（多选筛选用，可选） */
+  storeFunction?: string;
+  /** 门店类型（多选筛选用，可选） */
+  storeType?: string;
+  /** 经营模式（多选筛选用，可选） */
+  businessModel?: string;
 }
 
 export interface LoadResult {
