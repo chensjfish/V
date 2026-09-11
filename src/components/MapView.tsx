@@ -3,7 +3,7 @@ import { dashboard } from '@lark-base-open/js-sdk';
 import { loadPoints } from '../data';
 import { DEFAULT_MAP_KEY } from '../mapKey';
 import { loadTMap } from '../tmap';
-import { getBrandColor, styleIdForBrand } from '../brandColors';
+import { styleIdForBrand } from '../brandColors';
 import { makeMarkerIconForBrand } from '../brandLogos';
 import type { PluginConfig, StorePoint } from '../types';
 import FilterSelect from './FilterSelect';
@@ -64,6 +64,9 @@ export default function MapView({ config }: Props) {
   const pinnedWindowsRef = useRef<Map<string, any>>(new Map());
   const hoverIdRef = useRef<string | null>(null);
   const hoverTimerRef = useRef<any>(null);
+  const collapseTimerRef = useRef<any>(null);
+  const openDropdownsRef = useRef(0);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [message, setMessage] = useState('');
@@ -253,8 +256,6 @@ export default function MapView({ config }: Props) {
 
     // 构建点位气泡 HTML（主显品牌+简称，副显功能/类型/模式）
     const buildInfoContent = (point: StorePoint): string => {
-      const brand = point.brand ? escapeHtml(point.brand) : '';
-      const brandColor = point.brand ? getBrandColor(point.brand) : '#1f2329';
       const name = escapeHtml(point.name || '未命名门店');
       const lines = (
         [
@@ -271,9 +272,7 @@ export default function MapView({ config }: Props) {
             )}</span><span class="map-info-val">${escapeHtml(v as string)}</span></div>`,
         )
         .join('');
-      return `<div class="map-info">${
-        brand ? `<div class="map-info-brand" style="color:${brandColor}">${brand}</div>` : ''
-      }<div class="map-info-title">${name}</div>${
+      return `<div class="map-info"><div class="map-info-title">${name}</div>${
         lines ? `<div class="map-info-sub">${lines}</div>` : ''
       }</div>`;
     };
@@ -364,66 +363,96 @@ export default function MapView({ config }: Props) {
     dashboard.setRendered().catch(() => {});
   }, [status, filtered]);
 
+  // 筛选栏热区：鼠标进入即展开；离开后若无下拉在展开，短延时自动收起
+  const handleFiltersZoneEnter = () => {
+    if (collapseTimerRef.current) {
+      clearTimeout(collapseTimerRef.current);
+      collapseTimerRef.current = null;
+    }
+    setFiltersExpanded(true);
+  };
+  const handleFiltersZoneLeave = () => {
+    if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = setTimeout(() => {
+      if (openDropdownsRef.current === 0) setFiltersExpanded(false);
+    }, 250);
+  };
+  const handleDropdownOpenChange = (open: boolean) => {
+    openDropdownsRef.current = Math.max(0, openDropdownsRef.current + (open ? 1 : -1));
+  };
+
   return (
     <div className="map-wrap">
       {(hasProvince || hasCity || hasBrand || hasFunc || hasType || hasModel) && (
-        <div className="map-filters">
-          {hasProvince && (
-            <FilterSelect
-              placeholder="全部省份"
-              options={provinces}
-              value={province}
-              onChange={(v) => {
-                setProvince(v as string);
-                setCity('');
-              }}
-            />
-          )}
-          {hasCity && (
-            <FilterSelect
-              placeholder="全部城市"
-              options={cities}
-              value={city}
-              onChange={(v) => setCity(v as string)}
-            />
-          )}
-          {hasBrand && (
-            <FilterSelect
-              placeholder="全部品牌"
-              multiple
-              options={brands}
-              value={brandsSelected}
-              onChange={(v) => setBrandsSelected(v as string[])}
-            />
-          )}
-          {hasFunc && (
-            <FilterSelect
-              placeholder="全部功能"
-              multiple
-              options={funcs}
-              value={funcSelected}
-              onChange={(v) => setFuncSelected(v as string[])}
-            />
-          )}
-          {hasType && (
-            <FilterSelect
-              placeholder="全部类型"
-              multiple
-              options={types}
-              value={typeSelected}
-              onChange={(v) => setTypeSelected(v as string[])}
-            />
-          )}
-          {hasModel && (
-            <FilterSelect
-              placeholder="全部模式"
-              multiple
-              options={models}
-              value={modelSelected}
-              onChange={(v) => setModelSelected(v as string[])}
-            />
-          )}
-          <span className="map-filter-count">显示 {filtered.length} 个</span>
+        <div
+          className={'map-filters-zone' + (filtersExpanded ? ' expanded' : '')}
+          onMouseEnter={handleFiltersZoneEnter}
+          onMouseLeave={handleFiltersZoneLeave}
+        >
+          <div className="map-filters">
+            {hasProvince && (
+              <FilterSelect
+                placeholder="全部省份"
+                options={provinces}
+                value={province}
+                onChange={(v) => {
+                  setProvince(v as string);
+                  setCity('');
+                }}
+                onOpenChange={handleDropdownOpenChange}
+              />
+            )}
+            {hasCity && (
+              <FilterSelect
+                placeholder="全部城市"
+                options={cities}
+                value={city}
+                onChange={(v) => setCity(v as string)}
+                onOpenChange={handleDropdownOpenChange}
+              />
+            )}
+            {hasBrand && (
+              <FilterSelect
+                placeholder="全部品牌"
+                multiple
+                options={brands}
+                value={brandsSelected}
+                onChange={(v) => setBrandsSelected(v as string[])}
+                onOpenChange={handleDropdownOpenChange}
+              />
+            )}
+            {hasFunc && (
+              <FilterSelect
+                placeholder="全部功能"
+                multiple
+                options={funcs}
+                value={funcSelected}
+                onChange={(v) => setFuncSelected(v as string[])}
+                onOpenChange={handleDropdownOpenChange}
+              />
+            )}
+            {hasType && (
+              <FilterSelect
+                placeholder="全部类型"
+                multiple
+                options={types}
+                value={typeSelected}
+                onChange={(v) => setTypeSelected(v as string[])}
+                onOpenChange={handleDropdownOpenChange}
+              />
+            )}
+            {hasModel && (
+              <FilterSelect
+                placeholder="全部模式"
+                multiple
+                options={models}
+                value={modelSelected}
+                onChange={(v) => setModelSelected(v as string[])}
+                onOpenChange={handleDropdownOpenChange}
+              />
+            )}
+            <span className="map-filter-count">显示 {filtered.length} 个</span>
+          </div>
         </div>
       )}
       <div ref={containerRef} className="map-canvas" />

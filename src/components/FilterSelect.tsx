@@ -8,13 +8,20 @@ interface Props {
   /** 单选时为 string（'' 表示全部），多选时为 string[]（空数组表示全部） */
   value: string | string[];
   onChange: (value: string | string[]) => void;
+  /** 下拉展开/收起时回调，便于父级在展开时避免自动收起 */
+  onOpenChange?: (open: boolean) => void;
 }
 
-export default function FilterSelect({ placeholder, multiple, options, value, onChange }: Props) {
+export default function FilterSelect({ placeholder, multiple, options, value, onChange, onOpenChange }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const updateOpen = (v: boolean) => {
+    setOpen(v);
+    onOpenChange?.(v);
+  };
 
   const selectedArr = multiple ? (value as string[]) : [];
   const isAll = multiple ? selectedArr.length === 0 : value === '';
@@ -30,7 +37,7 @@ export default function FilterSelect({ placeholder, multiple, options, value, on
     if (!open) return;
     const handler = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        updateOpen(false);
         setQuery('');
       }
     };
@@ -64,7 +71,7 @@ export default function FilterSelect({ placeholder, multiple, options, value, on
       onChange(next);
     } else {
       onChange(opt === value ? '' : opt);
-      setOpen(false);
+      updateOpen(false);
     }
     setQuery('');
   };
@@ -79,7 +86,7 @@ export default function FilterSelect({ placeholder, multiple, options, value, on
       <button
         type="button"
         className={'filter-select-trigger' + (isAll ? '' : ' active')}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => updateOpen(!open)}
       >
         <span className="filter-select-text">{displayText()}</span>
         <span className="filter-select-caret">▾</span>
