@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { dashboard } from '@lark-base-open/js-sdk';
 import { loadPoints } from '../data';
 import { DEFAULT_MAP_KEY } from '../mapKey';
-import { makeMarkerIcon, loadTMap } from '../tmap';
+import { loadTMap } from '../tmap';
 import { getBrandColor, styleIdForBrand } from '../brandColors';
+import { makeMarkerIconForBrand } from '../brandLogos';
 import type { PluginConfig, StorePoint } from '../types';
 import FilterSelect from './FilterSelect';
 
@@ -11,16 +12,61 @@ interface Props {
   config: PluginConfig;
 }
 
+type FacetDim = 'brand' | 'func' | 'type' | 'model';
+
+/**
+ * 联动（faceted）筛选项：返回 dim 维度在当前「除 dim 自身外」所有筛选条件下的可选值。
+ * 即某个品牌的候选项，只保留在已选省份/城市/功能/类型/模式下真实存在的品牌，
+ * 实现四个维度互相联动。
+ */
+function facetOptions(
+  points: StorePoint[],
+  dim: FacetDim,
+  sel: {
+    province: string;
+    city: string;
+    brandsSelected: string[];
+    funcSelected: string[];
+    typeSelected: string[];
+    modelSelected: string[];
+  },
+): string[] {
+  const set = new Set<string>();
+  for (const p of points) {
+    if (sel.province && p.province !== sel.province) continue;
+    if (sel.city && p.city !== sel.city) continue;
+    if (dim !== 'brand' && sel.brandsSelected.length && !sel.brandsSelected.includes(p.brand ?? ''))
+      continue;
+    if (dim !== 'func' && sel.funcSelected.length && !sel.funcSelected.includes(p.storeFunction ?? ''))
+      continue;
+    if (dim !== 'type' && sel.typeSelected.length && !sel.typeSelected.includes(p.storeType ?? ''))
+      continue;
+    if (dim !== 'model' && sel.modelSelected.length && !sel.modelSelected.includes(p.businessModel ?? ''))
+      continue;
+    const v =
+      dim === 'brand'
+        ? p.brand
+        : dim === 'func'
+          ? p.storeFunction
+          : dim === 'type'
+            ? p.storeType
+            : p.businessModel;
+    if (v) set.add(v);
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
+}
+
 export default function MapView({ config }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const infoRef = useRef<any>(null);
+  const activeIdRef = useRef<string | null>(null);
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const [points, setPoints] = useState<StorePoint[]>([]);
-  const [stat, setStat] = useState({ total: 0, skipped: 0 });
+  const [, setStat] = useState({ total: 0, skipped: 0 });
 
   // 省份 / 城市 / 品牌 / 门店功能 / 门店类型 / 经营模式 筛选（品牌及后三个为多选）
   const [province, setProvince] = useState('');
@@ -51,29 +97,25 @@ export default function MapView({ config }: Props) {
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
   }, [points, province]);
 
-  const brands = useMemo(() => {
-    const set = new Set<string>();
-    points.forEach((p) => p.brand && set.add(p.brand));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
-  }, [points]);
+  const brands = useMemo(
+    () => facetOptions(points, 'brand', { province, city, brandsSelected, funcSelected, typeSelected, modelSelected }),
+    [points, province, city, brandsSelected, funcSelected, typeSelected, modelSelected],
+  );
 
-  const funcs = useMemo(() => {
-    const set = new Set<string>();
-    points.forEach((p) => p.storeFunction && set.add(p.storeFunction));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
-  }, [points]);
+  const funcs = useMemo(
+    () => facetOptions(points, 'func', { province, city, brandsSelected, funcSelected, typeSelected, modelSelected }),
+    [points, province, city, brandsSelected, funcSelected, typeSelected, modelSelected],
+  );
 
-  const types = useMemo(() => {
-    const set = new Set<string>();
-    points.forEach((p) => p.storeType && set.add(p.storeType));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
-  }, [points]);
+  const types = useMemo(
+    () => facetOptions(points, 'type', { province, city, brandsSelected, funcSelected, typeSelected, modelSelected }),
+    [points, province, city, brandsSelected, funcSelected, typeSelected, modelSelected],
+  );
 
-  const models = useMemo(() => {
-    const set = new Set<string>();
-    points.forEach((p) => p.businessModel && set.add(p.businessModel));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
-  }, [points]);
+  const models = useMemo(
+    () => facetOptions(points, 'model', { province, city, brandsSelected, funcSelected, typeSelected, modelSelected }),
+    [points, province, city, brandsSelected, funcSelected, typeSelected, modelSelected],
+  );
 
   const filtered = useMemo(
     () =>
@@ -88,6 +130,20 @@ export default function MapView({ config }: Props) {
       ),
     [points, province, city, brandsSelected, funcSelected, typeSelected, modelSelected],
   );
+
+  // 联动清理：当某维度的可选项因其他筛选被收窄后，移除已选中但已无对应门店的值，避免筛出空结果且无法取消
+  useEffect(() => {
+    setBrandsSelected((prev) => (prev.every((v) => brands.includes(v)) ? prev : prev.filter((v) => brands.includes(v))));
+  }, [brands]);
+  useEffect(() => {
+    setFuncSelected((prev) => (prev.every((v) => funcs.includes(v)) ? prev : prev.filter((v) => funcs.includes(v))));
+  }, [funcs]);
+  useEffect(() => {
+    setTypeSelected((prev) => (prev.every((v) => types.includes(v)) ? prev : prev.filter((v) => types.includes(v))));
+  }, [types]);
+  useEffect(() => {
+    setModelSelected((prev) => (prev.every((v) => models.includes(v)) ? prev : prev.filter((v) => models.includes(v))));
+  }, [models]);
 
   // 1. 取数
   useEffect(() => {
@@ -155,6 +211,8 @@ export default function MapView({ config }: Props) {
       markerRef.current.setMap(null);
       markerRef.current = null;
     }
+    infoRef.current?.close();
+    activeIdRef.current = null;
     if (filtered.length === 0) {
       dashboard.setRendered().catch(() => {});
       return;
@@ -171,10 +229,10 @@ export default function MapView({ config }: Props) {
       const sid = styleIdForBrand(p.brand);
       if (!styles[sid]) {
         styles[sid] = new TMap.MarkerStyle({
-          width: 24,
-          height: 32,
-          anchor: { x: 12, y: 32 },
-          src: makeMarkerIcon(getBrandColor(p.brand)),
+          width: 30,
+          height: 30,
+          anchor: { x: 15, y: 30 },
+          src: makeMarkerIconForBrand(p.brand),
         });
       }
     });
@@ -186,31 +244,53 @@ export default function MapView({ config }: Props) {
     });
 
     markerRef.current.on('click', (evt: any) => {
-      const index = Number(evt?.geometry?.id);
+      const id = evt?.geometry?.id;
+      const index = Number(id);
       const point = filtered[index];
       if (!point) return;
-      const position = new TMap.LatLng(point.lat, point.lng);
-      const addr = [point.province, point.city].filter(Boolean).join(' · ');
-      const brandLine = point.brand
-        ? `<div class="map-info-brand" style="color:${getBrandColor(point.brand)}">${escapeHtml(
-            point.brand,
-          )}</div>`
-        : '';
-      const content = `<div class="map-info"><div class="map-info-title">${escapeHtml(
-        point.name || '未命名门店',
-      )}</div>${brandLine}${
-        addr ? `<div class="map-info-addr">${escapeHtml(addr)}</div>` : ''
-      }<div class="map-info-coord">${point.lng.toFixed(6)}, ${point.lat.toFixed(6)}</div></div>`;
+
+      // 再次点击同一点位 -> 取消气泡
+      if (activeIdRef.current === id) {
+        infoRef.current?.close();
+        activeIdRef.current = null;
+        return;
+      }
+      activeIdRef.current = id;
+
+      const brand = point.brand ? escapeHtml(point.brand) : '';
+      const brandColor = point.brand ? getBrandColor(point.brand) : '#1f2329';
+      const name = escapeHtml(point.name || '未命名门店');
+      const lines = (
+        [
+          ['功能', point.storeFunction],
+          ['类型', point.storeType],
+          ['模式', point.businessModel],
+        ] as [string, string | undefined][]
+      )
+        .filter(([, v]) => v)
+        .map(
+          ([k, v]) =>
+            `<div class="map-info-line"><span class="map-info-key">${escapeHtml(
+              k,
+            )}</span><span class="map-info-val">${escapeHtml(v as string)}</span></div>`,
+        )
+        .join('');
+      const content = `<div class="map-info">${
+        brand ? `<div class="map-info-brand" style="color:${brandColor}">${brand}</div>` : ''
+      }<div class="map-info-title">${name}</div>${
+        lines ? `<div class="map-info-sub">${lines}</div>` : ''
+      }</div>`;
+
       if (!infoRef.current) {
         infoRef.current = new TMap.InfoWindow({
           map,
-          position,
+          position: new TMap.LatLng(point.lat, point.lng),
           content,
           offset: { x: 0, y: -34 },
           enableCustom: true,
         });
       } else {
-        infoRef.current.setPosition(position);
+        infoRef.current.setPosition(new TMap.LatLng(point.lat, point.lng));
         infoRef.current.setContent(content);
       }
       infoRef.current.open();
@@ -286,10 +366,6 @@ export default function MapView({ config }: Props) {
         </div>
       )}
       <div ref={containerRef} className="map-canvas" />
-      <div className="map-stat">
-        共 {stat.total} 条记录，成功打点 {points.length} 个
-        {stat.skipped > 0 ? `，跳过 ${stat.skipped} 条（无坐标或坐标超出范围）` : ''}
-      </div>
       {status === 'loading' && <div className="map-mask">地图加载中…</div>}
       {status === 'error' && <div className="map-mask map-mask-error">{message}</div>}
       {status === 'ready' && points.length === 0 && message && <div className="map-mask">{message}</div>}

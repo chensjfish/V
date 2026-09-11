@@ -32,19 +32,6 @@ body {
   width: 100%;
 }
 
-.map-stat {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #1f2329;
-  font-size: 12px;
-  line-height: 1.6;
-  pointer-events: none;
-}
-
 .map-mask {
   position: absolute;
   inset: 0;
@@ -63,23 +50,60 @@ body {
 }
 
 .map-info {
-  min-width: 120px;
-  padding: 8px 10px;
+  min-width: 160px;
+  max-width: 240px;
+  padding: 10px 12px;
   border-radius: 6px;
   background: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* 主显：品牌（带彩色圆点）+ 门店简称 */
+.map-info-brand {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.map-info-brand::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .map-info-title {
-  font-size: 13px;
-  font-weight: 500;
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 600;
   color: #1f2329;
 }
 
-.map-info-coord {
-  margin-top: 2px;
+/* 副显：门店功能 / 门店类型 / 经营模式 */
+.map-info-sub {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e5e6eb;
+}
+
+.map-info-line {
+  display: flex;
+  gap: 6px;
   font-size: 12px;
+  line-height: 1.7;
+}
+
+.map-info-key {
+  flex-shrink: 0;
   color: #8f959e;
+}
+
+.map-info-val {
+  color: #1f2329;
 }
 
 /* 配置面板 */
@@ -116,18 +140,6 @@ body {
   color: #1f2329;
 }
 
-.config-check {
-  align-items: flex-start;
-}
-
-.config-check label {
-  width: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #1f2329;
-}
-
 .config-hint {
   margin: 0 0 12px;
   padding-left: 118px;
@@ -156,6 +168,79 @@ body {
   margin: 10px 0 0;
   font-size: 12px;
   color: #646a73;
+}
+
+/* 配置面板：必选 / 可选 左右分栏 */
+.config-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.config-col {
+  min-width: 0;
+}
+
+.config-group-title {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2329;
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edeff2;
+}
+
+.config-group-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 13px;
+  margin-right: 7px;
+  border-radius: 2px;
+  background: #3370ff;
+  vertical-align: -2px;
+}
+
+.config-col:last-child .config-group-title::before {
+  background: #c5cad1;
+}
+
+/* 栏内：标签在上、控件在下，纵向排列 */
+.config-col .config-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.config-col .config-row label {
+  width: auto;
+  font-size: 13px;
+}
+
+.config-col .config-row select,
+.config-col .config-row input[type='text'] {
+  width: 100%;
+}
+
+.config-col .config-hint {
+  padding-left: 0;
+  margin: 0 0 14px;
+}
+
+.config-save {
+  margin-top: 18px;
+}
+
+/* 极窄面板下堆叠为单列，避免挤压 */
+@media (max-width: 360px) {
+  .config-cols {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
 }
 
 /* 诊断面板（?debug=1） */
@@ -394,10 +479,4 @@ body {
   margin-top: 2px;
   font-size: 12px;
   color: #646a73;
-}
-
-.map-info-brand {
-  margin-top: 2px;
-  font-size: 12px;
-  font-weight: 600;
 }

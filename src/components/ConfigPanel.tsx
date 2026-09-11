@@ -98,49 +98,38 @@ export default function ConfigPanel({ config }: Props) {
 
   return (
     <div className="config">
-      <div className="config-row">
-        <label>数据表</label>
-        <select
-          value={form.tableId ?? ''}
-          onChange={(e) => {
-            const id = e.target.value;
-            update({ tableId: id, tableName: tables.find((t) => t.id === id)?.name });
-          }}
-        >
-          <option value="">请选择数据表</option>
-          {tables.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <div className="config-cols">
+        <section className="config-col">
+          <div className="config-group-title">必选</div>
 
-      <div className="config-row">
-        <label>门店名称字段</label>
-        <select
-          value={form.nameFieldId ?? ''}
-          onChange={(e) => update({ nameFieldId: e.target.value })}
-        >
-          <option value="">（可选）不显示名称</option>
-          {fields.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="config-row">
+            <label>数据表</label>
+            <select
+              value={form.tableId ?? ''}
+              onChange={(e) => {
+                const id = e.target.value;
+                update({ tableId: id, tableName: tables.find((t) => t.id === id)?.name });
+              }}
+            >
+              <option value="">请选择数据表</option>
+              {tables.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="config-row">
-        <label>坐标来源</label>
-        <select
-          value={form.coordSource ?? 'lnglat'}
-          onChange={(e) => update({ coordSource: e.target.value as CoordSource })}
-        >
-          <option value="lnglat">经度字段 + 纬度字段</option>
-          <option value="location">单个地理位置字段</option>
-        </select>
-      </div>
+          <div className="config-row">
+            <label>坐标来源</label>
+            <select
+              value={form.coordSource ?? 'lnglat'}
+              onChange={(e) => update({ coordSource: e.target.value as CoordSource })}
+            >
+              <option value="lnglat">经度字段 + 纬度字段</option>
+              <option value="location">单个地理位置字段</option>
+            </select>
+          </div>
 
       {form.coordSource === 'location' ? (
         <div className="config-row">
@@ -190,18 +179,41 @@ export default function ConfigPanel({ config }: Props) {
         </>
       )}
 
-      <div className="config-row config-check">
-        <label>
-          <input
-            type="checkbox"
-            checked={form.swapLngLat ?? false}
-            onChange={(e) => update({ swapLngLat: e.target.checked })}
-          />
-          经纬度顺序颠倒（点位明显偏移时勾选）
-        </label>
-      </div>
+          <div className="config-row">
+            <label>门店名称字段</label>
+            <select
+              value={form.nameFieldId ?? ''}
+              onChange={(e) => update({ nameFieldId: e.target.value })}
+            >
+              <option value="">（可选）不显示名称</option>
+              {fields.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="config-subtitle">地图筛选（可选）</div>
+          <div className="config-row">
+            <label>腾讯地图 key</label>
+            <input
+              type="text"
+              value={form.mapKey ?? ''}
+              placeholder={KEY_PLACEHOLDER}
+              onChange={(e) => update({ mapKey: e.target.value })}
+            />
+          </div>
+          <p className="config-hint">
+            已内置默认 key，留空即可直接使用。key 在前端明文可见，请到腾讯位置服务控制台配置 Referer
+            白名单，只允许你的 Pages 域名使用。
+          </p>
+
+        </section>
+
+        <section className="config-col">
+          <div className="config-group-title">可选</div>
+
+          <div className="config-subtitle">地图筛选</div>
 
       <div className="config-row">
         <label>省份字段</label>
@@ -293,19 +305,8 @@ export default function ConfigPanel({ config }: Props) {
         </select>
       </div>
 
-      <div className="config-row">
-        <label>腾讯地图 key</label>
-        <input
-          type="text"
-          value={form.mapKey ?? ''}
-          placeholder={KEY_PLACEHOLDER}
-          onChange={(e) => update({ mapKey: e.target.value })}
-        />
+        </section>
       </div>
-      <p className="config-hint">
-        已内置默认 key，留空即可直接使用。key 在前端明文可见，请到腾讯位置服务控制台配置 Referer
-        白名单，只允许你的 Pages 域名使用。
-      </p>
 
       <button className="config-save" disabled={saving} onClick={handleSave}>
         {saving ? '保存中…' : '保存配置'}
