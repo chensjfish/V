@@ -60,8 +60,10 @@ export default function MapView({ config }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
-  const infoRef = useRef<any>(null);
-  const activeIdRef = useRef<string | null>(null);
+  const hoverInfoRef = useRef<any>(null);
+  const pinnedWindowsRef = useRef<Map<string, any>>(new Map());
+  const hoverIdRef = useRef<string | null>(null);
+  const hoverTimerRef = useRef<any>(null);
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [message, setMessage] = useState('');
@@ -211,8 +213,14 @@ export default function MapView({ config }: Props) {
       markerRef.current.setMap(null);
       markerRef.current = null;
     }
-    infoRef.current?.close();
-    activeIdRef.current = null;
+    hoverInfoRef.current?.close();
+    pinnedWindowsRef.current.forEach((w) => w.close());
+    pinnedWindowsRef.current.clear();
+    hoverIdRef.current = null;
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
     if (filtered.length === 0) {
       dashboard.setRendered().catch(() => {});
       return;
@@ -243,20 +251,8 @@ export default function MapView({ config }: Props) {
       geometries,
     });
 
-    markerRef.current.on('click', (evt: any) => {
-      const id = evt?.geometry?.id;
-      const index = Number(id);
-      const point = filtered[index];
-      if (!point) return;
-
-      // 再次点击同一点位 -> 取消气泡
-      if (activeIdRef.current === id) {
-        infoRef.current?.close();
-        activeIdRef.current = null;
-        return;
-      }
-      activeIdRef.current = id;
-
+    // 构建点位气泡 HTML（主显品牌+简称，副显功能/类型/模式）
+    const buildInfoContent = (point: StorePoint): string => {
       const brand = point.brand ? escapeHtml(point.brand) : '';
       const brandColor = point.brand ? getBrandColor(point.brand) : '#1f2329';
       const name = escapeHtml(point.name || '未命名门店');
@@ -275,25 +271,90 @@ export default function MapView({ config }: Props) {
             )}</span><span class="map-info-val">${escapeHtml(v as string)}</span></div>`,
         )
         .join('');
-      const content = `<div class="map-info">${
+      return `<div class="map-info">${
         brand ? `<div class="map-info-brand" style="color:${brandColor}">${brand}</div>` : ''
       }<div class="map-info-title">${name}</div>${
         lines ? `<div class="map-info-sub">${lines}</div>` : ''
       }</div>`;
+    };
 
-      if (!infoRef.current) {
-        infoRef.current = new TMap.InfoWindow({
+    // 打开指定点位（id）的气泡，target 指定用「固定窗口」还是「悬停窗口」
+    const openInfoFor = (id: string, target: 'pinned' | 'hover') => {
+      const point = filtered[Number(id)];
+      if (!point) return;
+      const content = buildInfoContent(point);
+      const position = new TMap.LatLng(point.lat, point.lng);
+      // 悬停：单例窗口
+      if (target === 'hover') {
+        if (!hoverInfoRef.current) {
+          hoverInfoRef.current = new TMap.InfoWindow({
+            map,
+            position,
+            content,
+            offset: { x: 0, y: -34 },
+            enableCustom: true,
+          });
+        } else {
+          hoverInfoRef.current.setPosition(position);
+          hoverInfoRef.current.setContent(content);
+        }
+        hoverInfoRef.current.open();
+        return;
+      }
+      // 固定：每个点位独立窗口，可多个并存
+      let w = pinnedWindowsRef.current.get(id);
+      if (!w) {
+        w = new TMap.InfoWindow({
           map,
-          position: new TMap.LatLng(point.lat, point.lng),
+          position,
           content,
           offset: { x: 0, y: -34 },
           enableCustom: true,
         });
+        pinnedWindowsRef.current.set(id, w);
       } else {
-        infoRef.current.setPosition(new TMap.LatLng(point.lat, point.lng));
-        infoRef.current.setContent(content);
+        w.setPosition(position);
+        w.setContent(content);
       }
-      infoRef.current.open();
+      w.open();
+    };
+
+    // 点击：固定/取消固定（再次点击同一点位单独取消）。每个固定点位独立窗口，可多个并存。
+    markerRef.current.on('click', (evt: any) => {
+      const id = evt?.geometry?.id;
+      const point = filtered[Number(id)];
+      if (!point) return;
+      if (pinnedWindowsRef.current.has(id)) {
+        pinnedWindowsRef.current.get(id)?.close();
+        pinnedWindowsRef.current.delete(id);
+        return;
+      }
+      hoverInfoRef.current?.close();
+      openInfoFor(id, 'pinned');
+    });
+
+    // 悬停：在独立「悬停窗口」显示该点位气泡（短延时避免相邻点位间移动闪烁）
+    markerRef.current.on('mouseover', (evt: any) => {
+      const id = evt?.geometry?.id;
+      if (!filtered[Number(id)]) return;
+      // 已固定的点位本身就显示在固定窗口，无需再开悬停窗口
+      if (pinnedWindowsRef.current.has(id)) return;
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      hoverIdRef.current = id;
+      openInfoFor(id, 'hover');
+    });
+
+    // 离开：短延时后关闭「悬停窗口」（固定窗口不受影响，A 仍保持显示）
+    markerRef.current.on('mouseout', (evt: any) => {
+      const id = evt?.geometry?.id;
+      hoverIdRef.current = null;
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = setTimeout(() => {
+        hoverInfoRef.current?.close();
+      }, 80);
     });
 
     const bounds = new TMap.LatLngBounds();
