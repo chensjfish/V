@@ -451,7 +451,6 @@ export default function MapView({ config }: Props) {
                 onOpenChange={handleDropdownOpenChange}
               />
             )}
-            <span className="map-filter-count">显示 {filtered.length} 个</span>
           </div>
         </div>
       )}

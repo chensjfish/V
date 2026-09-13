@@ -211,9 +211,7 @@ export default function ConfigPanel({ config }: Props) {
         </section>
 
         <section className="config-col">
-          <div className="config-group-title">可选</div>
-
-          <div className="config-subtitle">地图筛选</div>
+          <div className="config-group-title">可选-地图筛选</div>
 
       <div className="config-row">
         <label>省份字段</label>
