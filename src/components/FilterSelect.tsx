@@ -10,9 +10,11 @@ interface Props {
   onChange: (value: string | string[]) => void;
   /** 下拉展开/收起时回调，便于父级在展开时避免自动收起 */
   onOpenChange?: (open: boolean) => void;
+  /** 下拉面板中「全部」项的文案；不传则默认：多选「全部品牌」/ 单选「全部」 */
+  allLabel?: string;
 }
 
-export default function FilterSelect({ placeholder, multiple, options, value, onChange, onOpenChange }: Props) {
+export default function FilterSelect({ placeholder, multiple, options, value, onChange, onOpenChange, allLabel }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -105,7 +107,7 @@ export default function FilterSelect({ placeholder, multiple, options, value, on
               className={'filter-select-option' + (isAll ? ' selected' : '')}
               onClick={clearAll}
             >
-              {multiple ? '全部品牌' : '全部'}
+              {allLabel ?? (multiple ? '全部品牌' : '全部')}
             </div>
             {filteredOptions.map((opt) => {
               const selected = multiple ? selectedArr.includes(opt) : value === opt;

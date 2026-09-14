@@ -414,6 +414,7 @@ export default function MapView({ config }: Props) {
             {hasBrand && (
               <FilterSelect
                 placeholder="全部品牌"
+                allLabel="全部品牌"
                 multiple
                 options={brands}
                 value={brandsSelected}
@@ -424,6 +425,7 @@ export default function MapView({ config }: Props) {
             {hasFunc && (
               <FilterSelect
                 placeholder="全部功能"
+                allLabel="全部功能"
                 multiple
                 options={funcs}
                 value={funcSelected}
@@ -434,6 +436,7 @@ export default function MapView({ config }: Props) {
             {hasType && (
               <FilterSelect
                 placeholder="全部类型"
+                allLabel="全部类型"
                 multiple
                 options={types}
                 value={typeSelected}
@@ -444,6 +447,7 @@ export default function MapView({ config }: Props) {
             {hasModel && (
               <FilterSelect
                 placeholder="全部模式"
+                allLabel="全部模式"
                 multiple
                 options={models}
                 value={modelSelected}
