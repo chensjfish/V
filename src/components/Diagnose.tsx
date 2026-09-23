@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DashboardState, dashboard } from '@lark-base-open/js-sdk';
 import { loadPoints } from '../data';
-import { DEFAULT_MAP_KEY } from '../mapKey';
 import type { PluginConfig } from '../types';
 
 interface Props {
@@ -103,8 +102,8 @@ export default function Diagnose({ config, state }: Props) {
     errors: [],
   };
 
-  const keyInUse = (config.mapKey ?? '').trim() || DEFAULT_MAP_KEY;
-  const maskedKey = `${keyInUse.slice(0, 6)}…${keyInUse.slice(-4)}`;
+  const keyInUse = (config.mapKey ?? '').trim();
+  const maskedKey = keyInUse ? `${keyInUse.slice(0, 6)}…${keyInUse.slice(-4)}` : '未配置（请到配置面板填写）';
 
   if (!open) {
     return (
@@ -137,7 +136,7 @@ export default function Diagnose({ config, state }: Props) {
           字段：lng={config.lngFieldId ?? '-'} lat={config.latFieldId ?? '-'} name=
           {config.nameFieldId ?? '-'}
         </div>
-        <div>key：{maskedKey}（已内置默认 key 时也会显示）</div>
+        <div>key：{maskedKey}</div>
         <div>UA：{view.ua}</div>
         {view.errors.length > 0 && (
           <div className="diag-errors">

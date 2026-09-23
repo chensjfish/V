@@ -20,8 +20,8 @@ export function isDebug(): boolean {
   }
 }
 
-/** 输入框占位提示：留空则用内置默认 key */
-export const KEY_PLACEHOLDER = '留空则使用内置默认 key';
+/** 输入框占位提示：必须填写你自己的腾讯地图 key */
+export const KEY_PLACEHOLDER = '请输入你自己的腾讯地图 JS API key';
 
 export const MOCK_CONFIG: PluginConfig = {
   tableId: 'mock',

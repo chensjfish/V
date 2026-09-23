@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { dashboard } from '@lark-base-open/js-sdk';
 import { loadPoints } from '../data';
-import { DEFAULT_MAP_KEY } from '../mapKey';
 import { loadTMap } from '../tmap';
 import { styleIdForBrand } from '../brandColors';
 import { makeMarkerIconForBrand } from '../brandLogos';
@@ -183,8 +182,13 @@ export default function MapView({ config }: Props) {
   useEffect(() => {
     // 未配置数据表时优先显示配置引导，不覆盖为 key 的报错
     if (!config.tableId) return;
-    // 配置面板没填就回退到内置默认 key
-    const mapKey = (config.mapKey ?? '').trim() || DEFAULT_MAP_KEY;
+    const mapKey = (config.mapKey ?? '').trim();
+    // 未填写 key 时直接提示去配置，避免用空 key 触发无意义的加载失败
+    if (!mapKey) {
+      setStatus('error');
+      setMessage('未配置腾讯地图 key，请在组件配置面板「必选」中填写');
+      return;
+    }
     let alive = true;
     loadTMap(mapKey)
       .then((TMap) => {

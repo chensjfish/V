@@ -1,12 +1,16 @@
 /**
- * 内置的腾讯地图 key 默认值。
+ * 腾讯地图 key 配置说明
  *
- * 前端 key 无论如何都会出现在 JS 产物里，混淆没有意义，
- * 唯一的防线是腾讯位置服务控制台里的「域名白名单（Referer）」。
- * 请务必把白名单限制为：
- *   https://chensjfish.github.io
- *   http://localhost:5173   （本地调试用，调完可删）
+ * 本项目【不再内置】任何腾讯地图 key。
+ * key 必须由使用者在飞书组件「配置面板 → 必选 → 腾讯地图 key」处自行填写，
+ * 保存后随组件配置下发到前端。
  *
- * 如需更换：改这里的字符串即可，配置面板里填的 key 优先级更高。
+ * 为什么不放内置 key：
+ * - 前端 key 无论如何都会出现在 JS 产物里，无法保密；
+ * - 内置 key 一旦被滥用，配额与费用都由申请者承担；
+ * - 正确做法是使用方用自己的腾讯账号申请 JS API key，并在腾讯位置服务控制台
+ *   配置 Referer 域名白名单（仅放行你的 Pages 域名与 localhost），
+ *   比共用一个 key 安全得多。
+ *
+ * 申请地址：https://lbs.qq.com/dev/console/key/manage
  */
-export const DEFAULT_MAP_KEY = 'JA5BZ-ZBD67-S5JXB-HWDC4-67J2K-D2BJ3';
