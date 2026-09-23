@@ -3,7 +3,7 @@ import { dashboard } from '@lark-base-open/js-sdk';
 import { loadPoints } from '../data';
 import { loadTMap } from '../tmap';
 import { styleIdForBrand } from '../brandColors';
-import { makeMarkerIconForBrand } from '../brandLogos';
+import { makeMarkerIconForBrand, makeDotIcon } from '../brandLogos';
 import type { PluginConfig, StorePoint } from '../types';
 import FilterSelect from './FilterSelect';
 
@@ -135,6 +135,9 @@ export default function MapView({ config }: Props) {
     [points, province, city, brandsSelected, funcSelected, typeSelected, modelSelected],
   );
 
+  // 点位显示分层：未选省份/城市 → 不显示；仅选到省份 → 品牌色小圆点；选到城市 → 真实 SVG logo
+  const geoMode: 'none' | 'dot' | 'logo' = city ? 'logo' : province ? 'dot' : 'none';
+
   // 联动清理：当某维度的可选项因其他筛选被收窄后，移除已选中但已无对应门店的值，避免筛出空结果且无法取消
   useEffect(() => {
     setBrandsSelected((prev) => (prev.every((v) => brands.includes(v)) ? prev : prev.filter((v) => brands.includes(v))));
@@ -228,6 +231,11 @@ export default function MapView({ config }: Props) {
       clearTimeout(hoverTimerRef.current);
       hoverTimerRef.current = null;
     }
+    if (geoMode === 'none') {
+      // 未筛选省份/城市时地图不显示任何点位
+      dashboard.setRendered().catch(() => {});
+      return;
+    }
     if (filtered.length === 0) {
       dashboard.setRendered().catch(() => {});
       return;
@@ -239,15 +247,20 @@ export default function MapView({ config }: Props) {
       position: new TMap.LatLng(p.lat, p.lng),
     }));
 
+    // 仅省份层级用小圆点（品牌色），选到城市后用真实 SVG logo
+    const makeIcon = geoMode === 'dot' ? makeDotIcon : makeMarkerIconForBrand;
+    const mSize = geoMode === 'dot' ? 14 : 30;
+    const mAnchor = geoMode === 'dot' ? { x: 7, y: 7 } : { x: 15, y: 30 };
+
     const styles: Record<string, any> = {};
     filtered.forEach((p) => {
       const sid = styleIdForBrand(p.brand);
       if (!styles[sid]) {
         styles[sid] = new TMap.MarkerStyle({
-          width: 30,
-          height: 30,
-          anchor: { x: 15, y: 30 },
-          src: makeMarkerIconForBrand(p.brand),
+          width: mSize,
+          height: mSize,
+          anchor: mAnchor,
+          src: makeIcon(p.brand),
         });
       }
     });

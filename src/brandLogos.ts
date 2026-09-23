@@ -51,3 +51,32 @@ export function makeMarkerIconForBrand(brand?: string): string {
   if (logo) return logo;
   return makeMarkerIcon(getBrandColor(brand));
 }
+
+/**
+ * 各品牌「徽章主色」——直接取自对应 SVG 外部徽章 path 的 fill，
+ * 保证小圆点颜色与 logo 完全一致（不同于 BRAND_COLORS 的通用配色）。
+ */
+const LOGO_BADGE_COLORS: Record<string, string> = {
+  小鹏: '#000000',
+  理想: '#065F46',
+  特斯拉: '#E82127',
+  零跑: '#6A1B9A',
+  比亚迪: '#005BAC',
+  小米: '#FF6900',
+  吉利银河: '#657292',
+  蔚来: '#00BDBD',
+  极氪: '#918297',
+};
+
+/**
+ * 生成「品牌色小圆点」marker 图标：白边实心圆，颜色取各品牌 logo 徽章主色。
+ * 用于「仅筛选到省份」的层级——点位密集时用圆点比 logo 更清爽。
+ */
+export function makeDotIcon(brand?: string): string {
+  const color = (brand && LOGO_BADGE_COLORS[brand]) || getBrandColor(brand);
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">` +
+    `<circle cx="7" cy="7" r="6" fill="${color}" stroke="#ffffff" stroke-width="1.5"/>` +
+    `</svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
